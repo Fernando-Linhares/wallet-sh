@@ -1,5 +1,6 @@
 from bitcoinlib.wallets import Wallet, Mnemonic, wallets_list, wallet_create_or_open, wallet_delete_if_exists
 from wallet.shellmessages import primary, success, info, warn, danger
+from bitcoinlib.transactions import Transaction
 from os import system
 import qrcode_terminal
 
@@ -47,7 +48,7 @@ def open():
     if len(wl) == 1:
         w = Wallet(wl[0]['id'])
         w.info()
-        info('commands (out, addr, qrcode)')
+        info('commands (out, addr, qrcode, transact)')
         return walletopen(w)
 
     id = input('wallet id >>> ')
@@ -55,7 +56,7 @@ def open():
 
     w = Wallet(id)
     w.info()
-    info('commands (out, addr, qrcode)')
+    info('commands (out, addr, qrcode, transact)')
     walletopen(w)
     
 
@@ -120,16 +121,32 @@ def showaddress(wallet):
 def showqrcode(wallet):
     qrcode_terminal.draw(wallet.get_key().address)
 
+def transact(wallet):
+
+    addr = input(f"{wallet.name} >> Address: ")
+
+    value = input(f"{wallet.name} >> Value: ")
+
+    tx = wallet.send_to(addr, value)
+
+    success(f"Broadcast has been sent")
+    primary(f"- Transaction Id: {tx.id()}")
+    primary(f"- Value: {value}")
+    tx.info()
+
+
 wcommands = {
     'out': out,
     'addr': showaddress,
-    'qrcode': showqrcode
+    'qrcode': showqrcode,
+    'transact': transact
 }
 
 wcommands_desc = {
     'out': 'Go back for the begin',
     'addr': 'Show the address of wallet', 
-    'qrcode': 'Show Qrcode for transactions'
+    'qrcode': 'Show Qrcode for transactions',
+    'transact': 'Transact balance for another wallet'
 }
 
 def matchwcmd(cmd, wallet):
