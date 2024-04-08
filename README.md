@@ -13,4 +13,5 @@ Bitcoin Shell Wallet for make wallets and transactions in you own shell
 
 ![alt bitcoin Shell overview image 3](image-2.png)
 
-
+### Verification of transactions
+![alt text](image-1.png)

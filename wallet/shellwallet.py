@@ -1,5 +1,7 @@
 from bitcoinlib.wallets import Wallet, Mnemonic, wallets_list, wallet_create_or_open, wallet_delete_if_exists
+from bitcoinlib.services.services import Service
 from wallet.shellmessages import primary, success, info, warn, danger
+from wallet.shcolors import shcolors
 from bitcoinlib.transactions import Transaction
 from os import system
 import qrcode_terminal
@@ -9,32 +11,51 @@ def application(cmd='init'):
     ncmd = input('>>>  ')
     application(ncmd)
 
-
 def init():
     system('clear')
     showlogo()
-    print('\n Wellcome for shell wallet')
+    success('\n Wellcome to your shell wallet')
     print('\n --------------------------')
-    print('\n overview commands ( h, ls, o, del, c, exit)\n')
-    printwallets()
+    print('\n overview commands ( h, ls, o, del, c, trans, clear, exit)\n')
+    print('Wallets ')
+    printwalletsonce()
 
 def help():
     for key in commands_desc.keys():
         print(f'  .({key}) - {commands_desc[key]} .')
 
+def printwalletsonce():
+
+    wallets = listwallets()
+    if len(wallets) > 0:
+        wallet = Wallet(wallets[0]['id'])
+        balance = wallet.balance()
+        colors = shcolors()
+        print(f' {colors.OKBLUE}::::::::::::::::::{colors.ENDC} {colors.WARNING}WALLET{colors.ENDC} {colors.OKBLUE}:::::::::::::::::::::::::::::::::{colors.ENDC}')
+        primary(':::::::::::::::::::::::::::::::::::::::::::::::::::::::::::')
+        print(f"  [{wallets[0]['id']}]   {colors.OKGREEN}{wallet.name}{colors.ENDC} - BCT {balance}")
+        primary(':::::::::::::::::::::::::::::::::::::::::::::::::::::::::::')
+        print('..')
+
+        if len(wallets) > 1:
+            print(f'(+ {len(wallets) - 1})')
+
+def clear(w=None):
+    system('clear')
+
 def printwallets():
 
-    optraw = ''
-    wraw = '|'
+    for w in listwallets():
+        id = w['id']
 
-    for [i, w] in enumerate(listwallets()):
-        n = i + 1
         wallet = Wallet(w['name'])
         balance = wallet.balance()
-        wraw += f"{n} - {w['name']}, btn - {balance}|"
-
-    primary(optraw)
-    info(wraw)
+        colors = shcolors()
+        print(f' {colors.OKBLUE}::::::::::::::::::{colors.ENDC} {colors.WARNING}WALLET{colors.ENDC} {colors.OKBLUE}:::::::::::::::::::::::::::::::::{colors.ENDC}')
+        primary(':::::::::::::::::::::::::::::::::::::::::::::::::::::::::::')
+        print(f"  [{id}]   {colors.OKGREEN}{w['name']}{colors.ENDC} - BCT {balance}                    ")
+        primary(':::::::::::::::::::::::::::::::::::::::::::::::::::::::::::')
+        print('')
 
 def listwallets():
     return wallets_list()
@@ -48,7 +69,7 @@ def open():
 
     if len(wl) == 1:
         w = Wallet(wl[0]['id'])
-        w.info()
+        walletinfo(wl[0]['id'])
         info('commands (out, addr, qrcode, transact)')
         return walletopen(w)
 
@@ -56,10 +77,27 @@ def open():
     system('clear')
 
     w = Wallet(id)
-    w.info()
+    walletinfo(id, w)
     info('commands (out, addr, qrcode, transact)')
     walletopen(w)
     
+
+def walletinfo(id, w: Wallet):
+    warn("::::::::::::::::::::::::::::::::::::::::::::::::::::")
+    warn(f"  Id:      {id}")
+    warn(f"  Name:    {w.name}")
+    warn(f"  Balance: {w.balance()} ₿")
+    warn(f"  Address: {w.get_key().address}")
+    primary(f"  Transactions: {len(w.transactions())}")
+    warn("::::::::::::::::::::::::::::::::::::::::::::::::::::")
+
+def showinfotransaction():
+    txid = input("Insert Transaction Id: ")
+    servicename = input("Insert Service Name: ")
+
+    service = Service(network=servicename);
+    t = service.gettransaction(txid)
+    t.info()
 
 def walletopen(wallet):
     cmd = input(f'{wallet.name} >>> ')
@@ -70,7 +108,9 @@ def createwallet():
     mnemonic = Mnemonic()
     pkeys = mnemonic.generate(strength=256, add_checksum=True)
 
-    wallet_create_or_open(name, password=pkeys)
+    nw = input('Choose the wallet netowork: ')
+
+    wallet_create_or_open(name, password=pkeys, network=nw)
 
     primary('\n\tWrite this private key to access the wallet\n')
     listpk = pkeys.split(' ')
@@ -102,7 +142,9 @@ commands = {
     'h': help,
     'o': open,
     'c': createwallet,
-    'del': deletewallet
+    'del': deletewallet,
+    'clear': clear,
+    'trans': showinfotransaction
 }
 
 commands_desc = {
@@ -110,7 +152,9 @@ commands_desc = {
     'exit': 'Exit of application',
     'o': 'Open an wallet',
     'c': 'Create a wallet',
-    'del': 'Delete some wallet'
+    'del': 'Delete some wallet',
+    'trans': 'Trasaction Info Search',
+    'clear': 'Clear shell content'
 }
 
 def out(wallet):
@@ -135,19 +179,20 @@ def transact(wallet):
     primary(f"- Value: {value}")
     tx.info()
 
-
 wcommands = {
     'out': out,
     'addr': showaddress,
     'qrcode': showqrcode,
-    'transact': transact
+    'transact': transact,
+    'clear': clear
 }
 
 wcommands_desc = {
     'out': 'Go back for the begin',
     'addr': 'Show the address of wallet', 
     'qrcode': 'Show Qrcode for transactions',
-    'transact': 'Transact balance for another wallet'
+    'transact': 'Transact balance for another wallet',
+    'clear': 'Clear shell content'
 }
 
 def matchwcmd(cmd, wallet):
@@ -158,14 +203,14 @@ def matchcmd(cmd):
     return commands[cmd]()
 
 def showlogo():
-    warn("###############################################")
-    warn("##   ##  ######################################")
-    warn("##          ###################################")
-    warn("##   ###    ###################################")
-    warn("##   ###    ###################################")
-    warn("##       ##########       ####   #####   ######")
-    warn("##   ####   #######   ########   #####   ######")
-    warn("##   ####   #######       ####           ######")
-    warn("##          ##########    ####   #####   ######")
-    warn("##   ##  ##########       ####   #####   ######")
-    warn("###############################################")
+    warn("#####################################################")
+    warn("##  ###  ############################################")
+    warn("##          #########################################")
+    warn("##   ####   #########################################")
+    warn("##   ####   #########################################")
+    warn("##         ####       ###   ###   ###################")
+    warn("##   ####   ###   #######   ###   ###################")
+    warn("##   ####   ###       ###         ###################")
+    warn("##          #######   ###   ###   ###################")
+    warn("##  ###  ######       ###   ###   ### wallet sh #####")
+    warn("#####################################################")
