@@ -20,6 +20,10 @@ def init():
     print('Wallets ')
     printwalletsonce()
 
+def endapp(w=None):
+    success('Good bye!')
+    exit(0)
+
 def help():
     for key in commands_desc.keys():
         print(f'  .({key}) - {commands_desc[key]} .')
@@ -60,9 +64,6 @@ def printwallets():
 def listwallets():
     return wallets_list()
 
-def endapp():
-    success('Good bye!')
-    exit(0)
 
 def open():
     wl = listwallets()
@@ -183,16 +184,18 @@ wcommands = {
     'out': out,
     'addr': showaddress,
     'qrcode': showqrcode,
-    'transact': transact,
-    'clear': clear
+    'send': transact,
+    'clear': clear,
+    'exit': endapp
 }
 
 wcommands_desc = {
     'out': 'Go back for the begin',
     'addr': 'Show the address of wallet', 
     'qrcode': 'Show Qrcode for transactions',
-    'transact': 'Transact balance for another wallet',
-    'clear': 'Clear shell content'
+    'send': 'Transact balance for another wallet',
+    'clear': 'Clear shell content',
+    'exit': endapp
 }
 
 def matchwcmd(cmd, wallet):
